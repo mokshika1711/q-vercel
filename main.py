@@ -1,13 +1,10 @@
+import json
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-
-# Load the dataset (Assuming CSV format with columns "name" and "marks")
-df = pd.read_csv("students_marks.csv")  
 
 app = FastAPI()
 
-# Enable CORS (Allow all origins)
+# Enable CORS to allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,12 +13,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Load student marks from JSON file
+with open("q-vercel-python.json", "r") as f:
+    students_data = json.load(f)
+
 @app.get("/api")
 async def get_marks(name: list[str] = Query([])):
     """API endpoint to fetch marks of students by name."""
     marks = []
     for student in name:
-        row = df[df["name"] == student]
-        marks.append(int(row["marks"].values[0]) if not row.empty else None)
-    
+        record = next((item for item in students_data if item["name"] == student), None)
+        marks.append(record["marks"] if record else None)
+
     return {"marks": marks}
